@@ -58,9 +58,11 @@ class SyncWorker(
                 val fieldId = field.studyId
                 val exportData = dataHelper.getBrAPIExportData(fieldId, hostUrl)
 
-                // ── Upload new observations (BrAPI + user-created traits) ──
+                // ── Upload new observations (BrAPI + user-created traits + images) ──
                 val newObs = (exportData["newObservations"] ?: emptyList()) +
-                             (exportData["userCreatedTraitObservations"] ?: emptyList())
+                             (exportData["userCreatedTraitObservations"] ?: emptyList()) +
+                             (exportData["newImageObservations"] ?: emptyList()) +
+                             (exportData["userCreatedImageObservations"] ?: emptyList())
                 if (newObs.isNotEmpty()) {
                     val uploaded = mutableListOf<Int>()
                     brAPIService.awaitCreateObservations(
@@ -71,8 +73,9 @@ class SyncWorker(
                     totalUploaded += uploaded.sum()
                 }
 
-                // ── Upload edited observations ──
-                val editedObs = exportData["editedObservations"] ?: emptyList()
+                // ── Upload edited observations (including images) ──
+                val editedObs = (exportData["editedObservations"] ?: emptyList()) +
+                                (exportData["editedImageObservations"] ?: emptyList())
                 if (editedObs.isNotEmpty()) {
                     val uploaded = mutableListOf<Int>()
                     brAPIService.awaitUpdateObservations(
@@ -100,8 +103,9 @@ class SyncWorker(
                     }
                 }
 
-                // ── Upload edited images (update metadata + content) ──
-                val editedImageObs = exportData["editedImageObservations"] ?: emptyList()
+                // ── Upload edited images (update metadata + content, including incomplete) ──
+                val editedImageObs = (exportData["editedImageObservations"] ?: emptyList()) +
+                                     (exportData["incompleteImageObservations"] ?: emptyList())
                 if (editedImageObs.isNotEmpty()) {
                     val images = dataHelper.getImageDetails(applicationContext, editedImageObs)
                     for (image in images) {
