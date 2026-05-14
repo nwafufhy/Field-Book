@@ -57,6 +57,13 @@
     <string name="app_intro_high_contrast_title">High Contrast Theme</string>
     <string name="app_intro_high_contrast_summary">Enable a high contrast theme for better visibility on eInk devices.</string>
 
+    <!-- AppIntro library overrides -->
+    <string name="app_intro_skip_button">SKIP</string>
+    <string name="app_intro_next_button">NEXT</string>
+    <string name="app_intro_back_button">BACK</string>
+    <string name="app_intro_done_button">DONE</string>
+    <string name="app_intro_image_content_description">graphics</string>
+
     <!-- Storage Definer -->
     <string name="storage_definer_title">Storage Location</string>
     <string name="storage_definer_summary">Please select or create a folder that Field Book can use to store app data.</string>

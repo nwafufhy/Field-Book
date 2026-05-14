@@ -757,6 +757,14 @@
     <string name="app_intro_tutorial_summary">在顶部工具栏添加帮助图标，描述应用中的功能。</string>
     <string name="app_intro_high_contrast_title">高对比度主题</string>
     <string name="app_intro_high_contrast_summary">启用高对比度主题，以便在电子墨水设备上获得更好的可视性。</string>
+
+    <!-- AppIntro library overrides -->
+    <string name="app_intro_skip_button">跳过</string>
+    <string name="app_intro_next_button">下一步</string>
+    <string name="app_intro_back_button">返回</string>
+    <string name="app_intro_done_button">完成</string>
+    <string name="app_intro_image_content_description">引导页图片</string>
+
     <string name="storage_definer_title">存储位置</string>
     <string name="storage_definer_summary">请选择或创建一个文件夹，供田间记录本存储应用数据。</string>
     <string name="define_button_text">选择文件夹</string>
