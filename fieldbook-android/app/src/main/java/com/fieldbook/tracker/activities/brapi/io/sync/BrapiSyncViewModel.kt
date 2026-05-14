@@ -6,12 +6,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fieldbook.tracker.R
+import com.fieldbook.tracker.activities.brapi.io.mapper.toBrAPIObservationVariable
 import com.fieldbook.tracker.brapi.model.FieldBookImage
 import com.fieldbook.tracker.brapi.model.Observation
 import com.fieldbook.tracker.brapi.service.BrAPIService
 import com.fieldbook.tracker.brapi.service.BrAPIServiceFactory
 import com.fieldbook.tracker.brapi.service.BrapiPaginationManager
 import com.fieldbook.tracker.database.DataHelper
+import com.fieldbook.tracker.database.dao.ObservationVariableDao
 import com.fieldbook.tracker.preferences.PreferenceKeys
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -226,6 +228,31 @@ class BrapiSyncViewModel @Inject constructor(
             try {
 
                 if (newObservations.isNotEmpty()) {
+
+                    // Upload variable definitions for user-created traits first
+                    val localTraits = collectLocalTraitsFromObservations(newObservations)
+                    if (localTraits.isNotEmpty()) {
+                        val hostUrl = BrAPIService.getHostUrl(context) ?: "unknown"
+                        val brapiVariables = localTraits.map { it.toBrAPIObservationVariable() }
+                        try {
+                            val created = brAPIService.awaitCreateVariables(brapiVariables)
+                            for (brapiVar in created) {
+                                val varName = brapiVar.observationVariableName
+                                val serverId = brapiVar.observationVariableDbId
+                                if (varName != null && serverId != null) {
+                                    val trait = localTraits.find { it.name == varName }
+                                    if (trait != null) {
+                                        ObservationVariableDao.updateExternalDbId(
+                                            trait.id, serverId, hostUrl
+                                        )
+                                    }
+                                }
+                            }
+                            Log.d(TAG, "Uploaded ${created.size} variable definitions")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Variable upload failed, continuing", e)
+                        }
+                    }
 
                     _uiState.update {
                         it.copy(

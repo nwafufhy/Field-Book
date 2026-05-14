@@ -26,6 +26,8 @@ import com.fieldbook.tracker.utilities.Constants;
 import com.fieldbook.tracker.utilities.FailureFunction;
 import com.fieldbook.tracker.utilities.SuccessFunction;
 
+import org.brapi.v2.model.pheno.BrAPIObservationVariable;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -181,6 +183,10 @@ public interface BrAPIService {
     default void getObservationsByPage(final String studyDbId, final List<String> observationVariableDbIds, BrapiPaginationManager paginationManager, final Function<List<Observation>, Void> function, final Function<Integer, Void> failFunction) {}
 
     void getOntology(BrapiPaginationManager paginationManager, final BiFunction<List<TraitObject>, Integer, Void> function, final Function<Integer, Void> failFunction);
+
+    void createVariables(List<BrAPIObservationVariable> variables,
+                         final Function<List<BrAPIObservationVariable>, Void> function,
+                         final Function<Integer, Void> failFunction);
 
     void createObservations(List<Observation> observations,
                             final Function<List<Observation>, Void> function,

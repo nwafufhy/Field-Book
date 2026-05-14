@@ -96,6 +96,7 @@ import org.brapi.v2.model.pheno.response.BrAPIImageSingleResponse;
 import org.brapi.v2.model.pheno.response.BrAPIObservationLevelListResponse;
 import org.brapi.v2.model.pheno.response.BrAPIObservationListResponse;
 import org.brapi.v2.model.pheno.response.BrAPIObservationListResponseResult;
+import org.brapi.v2.model.pheno.response.BrAPIObservationVariableListResponse;
 import org.brapi.v2.model.pheno.response.BrAPIObservationUnitListResponse;
 import org.brapi.v2.model.pheno.response.BrAPIObservationUnitListResponseResult;
 import org.brapi.v2.model.pheno.response.BrAPIObservationVariableListResponse;
@@ -1380,11 +1381,61 @@ public class BrAPIServiceV2 extends AbstractBrAPIService implements BrAPIService
         return outputList;
     }
 
+    public void createVariables(List<BrAPIObservationVariable> variables,
+                                final Function<List<BrAPIObservationVariable>, Void> function,
+                                final Function<Integer, Void> failFunction) {
+
+        try {
+            BrapiV2ApiCallBack<BrAPIObservationVariableListResponse> callback =
+                new BrapiV2ApiCallBack<BrAPIObservationVariableListResponse>() {
+                    @Override
+                    public void onSuccess(BrAPIObservationVariableListResponse response,
+                                          int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+                        List<BrAPIObservationVariable> created = new ArrayList<>();
+                        if (response != null && response.getResult() != null
+                                && response.getResult().getData() != null) {
+                            created.addAll(response.getResult().getData());
+                        }
+                        function.apply(created);
+                    }
+
+                    @Override
+                    public void onFailure(ApiException error, int statusCode,
+                                          Map<String, List<String>> responseHeaders) {
+                        failFunction.apply(error.getCode());
+                        Log.e("BrAPIServiceV2", "createVariables failed: " + error.getMessage(), error);
+                    }
+                };
+
+            traitsApi.variablesPostAsync(variables, callback);
+
+        } catch (ApiException error) {
+            failFunction.apply(error.getCode());
+            Log.e("BrAPIServiceV2", "createVariables API Exception", error);
+        }
+    }
+
     public void createObservations(List<Observation> observations,
                                    final Function<List<Observation>, Void> function,
                                    final Function<Integer, Void> failFunction) {
 
         try {
+            // Refresh variableDbIds: local traits may have been uploaded via createVariables
+            for (Observation observation : observations) {
+                String varDbId = observation.getVariableDbId();
+                if (varDbId == null || varDbId.isEmpty()) {
+                    String varName = observation.getVariableName();
+                    if (varName != null && !varName.isEmpty()) {
+                        String newExternalId =
+                            ObservationVariableDao.Companion.getExternalDbIdByTraitName(varName);
+                        if (newExternalId != null && !newExternalId.isEmpty()) {
+                            observation.setVariableDbId(newExternalId);
+                        }
+                    }
+                }
+            }
+
             BrapiV2ApiCallBack<BrAPIObservationListResponse> callback = new BrapiV2ApiCallBack<BrAPIObservationListResponse>() {
                 @Override
                 public void onSuccess(BrAPIObservationListResponse phenotypesResponse, int i, Map<String, List<String>> map) {

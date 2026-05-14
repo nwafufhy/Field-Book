@@ -109,6 +109,28 @@ async def get_variables(
     return _paginated_response(ObservationVariableSchema, items, total, page, pageSize)
 
 
+@router.post("/brapi/v2/variables")
+async def post_variables(
+    body: list[dict[str, Any]],
+    db: AsyncSession = Depends(get_db),
+):
+    """Create or update observation variables with full trait/scale/method info."""
+    variables: list[dict[str, Any]] = []
+    for var_dict in body:
+        snake = camel_dict_to_snake(var_dict)
+        variables.append(snake)
+
+    created = await svc.create_variables(db, variables)
+    return BrAPIListResponse(
+        metadata=Metadata(pagination=Pagination(
+            pageSize=len(created), currentPage=0,
+            totalCount=len(created), totalPages=1,
+        )),
+        result={"data": [ObservationVariableSchema.model_validate(
+            orm_to_camel(v)) for v in created]},
+    ).model_dump(by_alias=True)
+
+
 # ── Observations ───────────────────────────────────────────
 
 @router.get("/brapi/v2/observations")
