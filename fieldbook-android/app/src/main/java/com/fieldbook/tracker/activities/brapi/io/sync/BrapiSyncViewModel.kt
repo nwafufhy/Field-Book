@@ -145,10 +145,13 @@ class BrapiSyncViewModel @Inject constructor(
         val exportData = dataHelper.getBrAPIExportData(studyId, hostURL)
 
         newObservations = (exportData["newObservations"] ?: emptyList()) +
-                          (exportData["userCreatedTraitObservations"] ?: emptyList())
+                          (exportData["userCreatedTraitObservations"] ?: emptyList()) +
+                          (exportData["newImageObservations"] ?: emptyList()) +
+                          (exportData["userCreatedImageObservations"] ?: emptyList())
         syncedObservations = exportData["syncedObservations"] ?: emptyList()
         syncedImageObservations = exportData["syncedImageObservations"] ?: emptyList()
-        editedObservations = exportData["editedObservations"] ?: emptyList()
+        editedObservations = (exportData["editedObservations"] ?: emptyList()) +
+                             (exportData["editedImageObservations"] ?: emptyList())
         newImageObservations = (exportData["newImageObservations"] ?: emptyList()) +
                                (exportData["userCreatedImageObservations"] ?: emptyList())
         editedImageObservations = exportData["editedImageObservations"] ?: emptyList()
