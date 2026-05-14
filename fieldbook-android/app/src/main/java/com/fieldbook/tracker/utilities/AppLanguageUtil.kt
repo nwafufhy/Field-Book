@@ -43,11 +43,13 @@ class AppLanguageUtil {
                         Log.d(TAG, "Language set from preferences: $id")
 
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(id))
+                        Locale.setDefault(Locale.forLanguageTag(id))
 
                     } else {
 
                         Log.d(TAG, "No language stored in preferences, defaulting to zh-CN.")
                         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("zh-CN"))
+                        Locale.setDefault(Locale.forLanguageTag("zh-CN"))
 
                     }
 

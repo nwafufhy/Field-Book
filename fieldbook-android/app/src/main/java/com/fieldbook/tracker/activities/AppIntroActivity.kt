@@ -1,18 +1,33 @@
 package com.fieldbook.tracker.activities
 
+import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.preference.PreferenceManager
 import com.fieldbook.tracker.R
 import com.fieldbook.tracker.fragments.GallerySlideFragment
 import com.fieldbook.tracker.fragments.OptionalSetupFragment
 import com.fieldbook.tracker.fragments.RequiredSetupPolicyFragment
+import com.fieldbook.tracker.preferences.PreferenceKeys
 import com.github.appintro.AppIntro
 import com.github.appintro.AppIntroFragment.Companion.createInstance
+import java.util.Locale
 
 class AppIntroActivity : AppIntro() {
+
+    override fun attachBaseContext(newBase: Context) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(newBase)
+        val langTag = prefs.getString(PreferenceKeys.LANGUAGE_LOCALE_ID, "")?.ifEmpty { "zh-CN" } ?: "zh-CN"
+        val locale = Locale.forLanguageTag(langTag)
+        Locale.setDefault(locale)
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
