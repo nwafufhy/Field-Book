@@ -147,7 +147,8 @@ class BrapiSyncViewModel @Inject constructor(
         syncedObservations = exportData["syncedObservations"] ?: emptyList()
         syncedImageObservations = exportData["syncedImageObservations"] ?: emptyList()
         editedObservations = exportData["editedObservations"] ?: emptyList()
-        newImageObservations = exportData["newImageObservations"] ?: emptyList()
+        newImageObservations = (exportData["newImageObservations"] ?: emptyList()) +
+                               (exportData["userCreatedImageObservations"] ?: emptyList())
         editedImageObservations = exportData["editedImageObservations"] ?: emptyList()
         incompleteImageObservations = exportData["incompleteImageObservations"] ?: emptyList()
 

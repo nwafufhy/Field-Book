@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.fieldbook.tracker.brapi.model.FieldBookImage
 import com.fieldbook.tracker.brapi.service.BrAPIService
 import com.fieldbook.tracker.brapi.service.BrAPIServiceFactory
 import com.fieldbook.tracker.database.DataHelper
@@ -80,6 +81,39 @@ class SyncWorker(
                         onChunkFailed = { code, _ -> Log.e(TAG, "Update failed: $code") },
                     )
                     totalUploaded += uploaded.sum()
+                }
+
+                // ── Upload new images (metadata + content) ──
+                val newImageObs = (exportData["newImageObservations"] ?: emptyList()) +
+                                  (exportData["userCreatedImageObservations"] ?: emptyList())
+                if (newImageObs.isNotEmpty()) {
+                    val images = dataHelper.getImageDetails(applicationContext, newImageObs)
+                    for (image in images) {
+                        try {
+                            val imageWithId = brAPIService.awaitPostImageMetaData(image)
+                            imageWithId.loadImage(applicationContext)
+                            brAPIService.awaitPutImageContent(imageWithId)
+                            totalUploaded++
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Image upload failed: ${image.fileName}", e)
+                        }
+                    }
+                }
+
+                // ── Upload edited images (update metadata + content) ──
+                val editedImageObs = exportData["editedImageObservations"] ?: emptyList()
+                if (editedImageObs.isNotEmpty()) {
+                    val images = dataHelper.getImageDetails(applicationContext, editedImageObs)
+                    for (image in images) {
+                        try {
+                            image.loadImage(applicationContext)
+                            brAPIService.awaitPutImage(image)
+                            brAPIService.awaitPutImageContent(image)
+                            totalUploaded++
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Image update failed: ${image.fileName}", e)
+                        }
+                    }
                 }
 
                 // ── Download: get latest observations for this study ──

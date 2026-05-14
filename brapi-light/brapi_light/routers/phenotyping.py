@@ -227,7 +227,12 @@ async def post_images(
     body: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db),
 ):
-    images = [Image(**camel_dict_to_snake(img)) for img in body]
+    allowed = {c.name for c in Image.__table__.columns}
+    images: list[Image] = []
+    for img in body:
+        snake = camel_dict_to_snake(img)
+        filtered = {k: v for k, v in snake.items() if k in allowed}
+        images.append(Image(**filtered))
     created = await svc.create_images(db, images)
     return BrAPIListResponse(
         metadata=Metadata(),
