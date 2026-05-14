@@ -1,6 +1,7 @@
 """BrAPI phenotyping endpoints: observationunits, variables, observations, images."""
 
 import json
+import logging
 from math import ceil
 from typing import Any
 
@@ -25,6 +26,8 @@ from brapi_light.schemas.phenotyping import (
     ObservationVariableSchema,
 )
 from brapi_light.services import phenotyping as svc
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -118,6 +121,11 @@ async def post_variables(
     variables: list[dict[str, Any]] = []
     for var_dict in body:
         snake = camel_dict_to_snake(var_dict)
+        logger.info("POST /variables item: name=%r keys=%s scale_keys=%s trait_keys=%s",
+                    snake.get("observation_variable_name"),
+                    sorted(snake.keys()),
+                    sorted(snake["scale"].keys()) if isinstance(snake.get("scale"), dict) else None,
+                    sorted(snake["trait"].keys()) if isinstance(snake.get("trait"), dict) else None)
         variables.append(snake)
 
     created = await svc.create_variables(db, variables)

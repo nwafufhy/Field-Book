@@ -1,6 +1,7 @@
 """CRUD operations for phenotyping entities."""
 
 import json
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
@@ -12,6 +13,8 @@ from brapi_light.models.phenotyping import (
     ObservationUnit,
     ObservationVariable,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def _list_all(
@@ -79,6 +82,10 @@ async def resolve_or_create_variable(
     existing = (await db.execute(stmt)).scalars().first()
     if existing is not None:
         return existing.observation_variable_db_id
+    logger.warning(
+        "resolve_or_create_variable: auto-creating variable '%s' WITHOUT scale — "
+        "client should invoke POST /variables first", variable_name
+    )
     new_var = ObservationVariable(
         observation_variable_name=variable_name,
         study_db_id=study_db_id,
@@ -102,6 +109,11 @@ async def ensure_variable_exists(
     existing = (await db.execute(stmt)).scalars().first()
     if existing is not None:
         return
+    logger.warning(
+        "ensure_variable_exists: auto-creating variable '%s' (id=%s) WITHOUT scale — "
+        "client should invoke POST /variables first",
+        variable_name, variable_db_id,
+    )
     db.add(ObservationVariable(
         observation_variable_db_id=variable_db_id,
         observation_variable_name=variable_name or variable_db_id[:8],
