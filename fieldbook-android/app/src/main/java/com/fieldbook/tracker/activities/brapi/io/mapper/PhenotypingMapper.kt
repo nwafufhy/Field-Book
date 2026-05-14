@@ -9,6 +9,10 @@ import com.fieldbook.tracker.utilities.SynonymsUtil
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.brapi.v2.model.pheno.BrAPIObservationVariable
+import org.brapi.v2.model.pheno.BrAPIScale
+import org.brapi.v2.model.pheno.BrAPIScaleValidValues
+import org.brapi.v2.model.pheno.BrAPITrait
+import org.brapi.v2.model.pheno.BrAPITraitDataType
 
 /**
  * File for extension functions to convert BrAPI objects to FieldBook objects
@@ -73,4 +77,45 @@ fun BrAPIObservationVariable.toTraitObject(context: Context) = TraitObject().als
 
     it.visible = true
 
+}
+
+fun TraitObject.toBrAPIObservationVariable(): BrAPIObservationVariable {
+    return BrAPIObservationVariable().apply {
+
+        if (!externalDbId.isNullOrEmpty()) {
+            observationVariableDbId = externalDbId
+        }
+
+        observationVariableName = name
+        defaultValue = defaultValue.ifEmpty { null }
+
+        if (synonyms.isNotEmpty()) {
+            this.synonyms = synonyms.toList()
+        }
+
+        trait = BrAPITrait().apply {
+            traitName = this@toBrAPIObservationVariable.name
+            traitDescription = details.ifEmpty { null }
+        }
+
+        scale = BrAPIScale().apply {
+            dataType = BrAPITraitDataType.fromValue(
+                DataTypes.convertFieldBookFormatToBrAPIDataType(format)
+            )
+
+            val hasMin = this@toBrAPIObservationVariable.minimum.isNotEmpty()
+            val hasMax = this@toBrAPIObservationVariable.maximum.isNotEmpty()
+            val hasCat = this@toBrAPIObservationVariable.categories.isNotEmpty()
+
+            if (hasMin || hasMax || hasCat) {
+                validValues = BrAPIScaleValidValues().apply {
+                    if (hasMin) minimumValue = this@toBrAPIObservationVariable.minimum
+                    if (hasMax) maximumValue = this@toBrAPIObservationVariable.maximum
+                    if (hasCat) categories = CategoryJsonUtil.decode(
+                        this@toBrAPIObservationVariable.categories
+                    )
+                }
+            }
+        }
+    }
 }

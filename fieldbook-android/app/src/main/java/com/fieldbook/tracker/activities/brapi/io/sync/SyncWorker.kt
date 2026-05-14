@@ -5,10 +5,12 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.fieldbook.tracker.activities.brapi.io.mapper.toBrAPIObservationVariable
 import com.fieldbook.tracker.brapi.model.FieldBookImage
 import com.fieldbook.tracker.brapi.service.BrAPIService
 import com.fieldbook.tracker.brapi.service.BrAPIServiceFactory
 import com.fieldbook.tracker.database.DataHelper
+import com.fieldbook.tracker.database.dao.ObservationVariableDao
 import com.fieldbook.tracker.database.dao.StudyDao
 import com.fieldbook.tracker.preferences.PreferenceKeys
 import kotlinx.coroutines.Dispatchers
@@ -58,13 +60,39 @@ class SyncWorker(
                 val fieldId = field.studyId
                 val exportData = dataHelper.getBrAPIExportData(fieldId, hostUrl)
 
-                // ── Upload new observations (BrAPI + user-created traits) ──
-                val newObs = (exportData["newObservations"] ?: emptyList()) +
-                             (exportData["userCreatedTraitObservations"] ?: emptyList())
-                if (newObs.isNotEmpty()) {
+                // ── Upload variable definitions for user-created traits ──
+                val newObsForUpload = (exportData["newObservations"] ?: emptyList()) +
+                                      (exportData["userCreatedTraitObservations"] ?: emptyList()) +
+                                      (exportData["newImageObservations"] ?: emptyList()) +
+                                      (exportData["userCreatedImageObservations"] ?: emptyList())
+                val localTraits = collectLocalTraitsFromObservations(newObsForUpload)
+                if (localTraits.isNotEmpty()) {
+                    try {
+                        val brapiVariables = localTraits.map { it.toBrAPIObservationVariable() }
+                        val created = brAPIService.awaitCreateVariables(brapiVariables)
+                        for (brapiVar in created) {
+                            val varName = brapiVar.observationVariableName
+                            val serverId = brapiVar.observationVariableDbId
+                            if (varName != null && serverId != null) {
+                                val trait = localTraits.find { it.name == varName }
+                                if (trait != null) {
+                                    ObservationVariableDao.updateExternalDbId(
+                                        trait.id, serverId, hostUrl
+                                    )
+                                }
+                            }
+                        }
+                        Log.d(TAG, "Uploaded ${created.size} variable definitions")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Variable upload failed, continuing", e)
+                    }
+                }
+
+                // ── Upload new observations (BrAPI + user-created traits + images) ──
+                if (newObsForUpload.isNotEmpty()) {
                     val uploaded = mutableListOf<Int>()
                     brAPIService.awaitCreateObservations(
-                        applicationContext, newObs,
+                        applicationContext, newObsForUpload,
                         onChunkCompleted = { chunk -> synchronized(uploaded) { uploaded.add(chunk.size) } },
                         onChunkFailed = { code, _ -> Log.e(TAG, "Upload failed: $code") },
                     )

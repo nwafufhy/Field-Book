@@ -108,3 +108,113 @@ async def test_variables_pagination(client, db_session):
     assert response.status_code == 200
     assert len(response.json()["result"]["data"]) == 2
     assert response.json()["metadata"]["pagination"]["totalCount"] == 5
+
+
+@pytest.mark.asyncio
+async def test_post_variables_creates_with_trait_and_scale(client, db_session):
+    from brapi_light.models.core import Program, Study, Trial
+
+    p = Program(program_db_id="p1", program_name="Wheat")
+    t = Trial(trial_db_id="t1", trial_name="T1", program_db_id="p1")
+    s = Study(study_db_id="s1", study_name="S1", program_db_id="p1", trial_db_id="t1")
+    db_session.add_all([p, t, s])
+    await db_session.commit()
+
+    payload = [{
+        "observationVariableName": "Plant Height",
+        "studyDbId": "s1",
+        "trait": {"traitName": "Plant Height", "traitDescription": "Height in cm"},
+        "scale": {"dataType": "Numerical", "validValues": {"min": "0", "max": "300"}},
+    }]
+    response = await client.post("/brapi/v2/variables", json=payload)
+    assert response.status_code == 200
+    data = response.json()["result"]["data"]
+    assert len(data) == 1
+    var = data[0]
+    assert var["observationVariableDbId"] is not None
+    assert var["observationVariableName"] == "Plant Height"
+    assert var["trait"]["traitName"] == "Plant Height"
+    assert var["scale"]["dataType"] == "Numerical"
+
+
+@pytest.mark.asyncio
+async def test_post_variables_with_explicit_id(client, db_session):
+    from brapi_light.models.core import Program, Study, Trial
+
+    p = Program(program_db_id="p1", program_name="Wheat")
+    t = Trial(trial_db_id="t1", trial_name="T1", program_db_id="p1")
+    s = Study(study_db_id="s1", study_name="S1", program_db_id="p1", trial_db_id="t1")
+    db_session.add_all([p, t, s])
+    await db_session.commit()
+
+    payload = [{
+        "observationVariableDbId": "custom_v1",
+        "observationVariableName": "Grain Yield",
+        "studyDbId": "s1",
+        "trait": {"traitName": "Grain Yield"},
+        "scale": {"dataType": "Numerical"},
+    }]
+    response = await client.post("/brapi/v2/variables", json=payload)
+    assert response.status_code == 200
+    var = response.json()["result"]["data"][0]
+    assert var["observationVariableDbId"] == "custom_v1"
+
+
+@pytest.mark.asyncio
+async def test_post_variables_upsert_existing(client, db_session):
+    from brapi_light.models.core import Program, Study, Trial
+
+    p = Program(program_db_id="p1", program_name="Wheat")
+    t = Trial(trial_db_id="t1", trial_name="T1", program_db_id="p1")
+    s = Study(study_db_id="s1", study_name="S1", program_db_id="p1", trial_db_id="t1")
+    db_session.add_all([p, t, s])
+    await db_session.commit()
+
+    payload = [{
+        "observationVariableDbId": "v_upsert",
+        "observationVariableName": "Old Name",
+        "trait": {"traitName": "Old Name"},
+        "scale": {"dataType": "Text"},
+    }]
+    await client.post("/brapi/v2/variables", json=payload)
+
+    payload2 = [{
+        "observationVariableDbId": "v_upsert",
+        "observationVariableName": "New Name",
+        "trait": {"traitName": "New Name"},
+        "scale": {"dataType": "Numerical"},
+    }]
+    resp = await client.post("/brapi/v2/variables", json=payload2)
+    assert resp.status_code == 200
+    var = resp.json()["result"]["data"][0]
+    assert var["observationVariableName"] == "New Name"
+    assert var["scale"]["dataType"] == "Numerical"
+
+    # Verify only one variable with this ID exists
+    get_resp = await client.get("/brapi/v2/variables")
+    matching = [v for v in get_resp.json()["result"]["data"]
+                if v["observationVariableDbId"] == "v_upsert"]
+    assert len(matching) == 1
+
+
+@pytest.mark.asyncio
+async def test_post_variables_auto_generates_id(client, db_session):
+    from brapi_light.models.core import Program, Study, Trial
+
+    p = Program(program_db_id="p1", program_name="Wheat")
+    t = Trial(trial_db_id="t1", trial_name="T1", program_db_id="p1")
+    s = Study(study_db_id="s1", study_name="S1", program_db_id="p1", trial_db_id="t1")
+    db_session.add_all([p, t, s])
+    await db_session.commit()
+
+    payload = [{
+        "observationVariableName": "Auto ID Trait",
+        "trait": {"traitName": "Auto ID Trait"},
+        "scale": {"dataType": "Boolean"},
+    }]
+    response = await client.post("/brapi/v2/variables", json=payload)
+    assert response.status_code == 200
+    var = response.json()["result"]["data"][0]
+    assert var["observationVariableDbId"] is not None
+    assert len(var["observationVariableDbId"]) > 0
+    assert var["observationVariableDbId"] != "custom_v1"  # not from another test

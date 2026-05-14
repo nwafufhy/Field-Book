@@ -396,5 +396,29 @@ class ObservationVariableDao {
             val contentValues = ContentValues().apply { put("observation_variable_alias", newName) }
             db.update(ObservationVariable.tableName, contentValues, "${ObservationVariable.PK} = ?", arrayOf(traitDbId))
         }
+
+        fun updateExternalDbId(internalId: String, externalDbId: String, dataSource: String) = withDatabase { db ->
+            val contentValues = ContentValues().apply {
+                put("external_db_id", externalDbId)
+                put("trait_data_source", dataSource)
+            }
+            db.update(
+                ObservationVariable.tableName,
+                contentValues,
+                "${ObservationVariable.PK} = ?",
+                arrayOf(internalId)
+            )
+        }
+
+        fun getExternalDbIdByTraitName(traitName: String): String? = withDatabase { db ->
+            val cursor = db.query(
+                ObservationVariable.tableName,
+                select = arrayOf("external_db_id"),
+                where = "observation_variable_name = ? COLLATE NOCASE",
+                whereArgs = arrayOf(traitName)
+            )
+            val row = cursor.toFirst()
+            if (row.isEmpty()) null else row["external_db_id"] as? String
+        }
     }
 }

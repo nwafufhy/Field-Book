@@ -111,6 +111,60 @@ async def ensure_variable_exists(
     await db.flush()
 
 
+async def create_variables(
+    db: AsyncSession,
+    variable_dicts: list[dict],
+) -> list[ObservationVariable]:
+    """Create or update observation variables (upsert by ID).
+
+    Accepts a list of dicts with keys matching ObservationVariable columns.
+    Dict/list values (trait, scale, synonyms) are JSON-serialised.
+    Returns all created/updated variables.
+    """
+    result: list[ObservationVariable] = []
+    column_names = {c.name for c in ObservationVariable.__table__.columns}
+    json_cols = {"trait", "scale"}
+
+    for data in variable_dicts:
+        var_id = data.get("observation_variable_db_id")
+        if var_id:
+            stmt = select(ObservationVariable).where(
+                ObservationVariable.observation_variable_db_id == var_id
+            )
+            existing = (await db.execute(stmt)).scalar_one_or_none()
+            if existing is not None:
+                for field in ("observation_variable_name", "trait", "scale",
+                              "default_value", "synonyms", "study_db_id"):
+                    val = data.get(field)
+                    if val is not None:
+                        if field in json_cols and isinstance(val, dict):
+                            val = json.dumps(val)
+                        elif field == "synonyms" and isinstance(val, list):
+                            val = json.dumps(val)
+                        setattr(existing, field, val)
+                result.append(existing)
+                continue
+
+        row: dict[str, object] = {}
+        for k, v in data.items():
+            if k not in column_names:
+                continue
+            if k in json_cols and isinstance(v, dict):
+                row[k] = json.dumps(v)
+            elif k == "synonyms" and isinstance(v, list):
+                row[k] = json.dumps(v)
+            elif v is not None:
+                row[k] = v
+        new_var = ObservationVariable(**row)
+        db.add(new_var)
+        result.append(new_var)
+
+    await db.commit()
+    for var in result:
+        await db.refresh(var)
+    return result
+
+
 async def create_observations(db: AsyncSession, observations: list[Observation]) -> list[Observation]:
     now = datetime.now(timezone.utc).isoformat()
     for obs in observations:

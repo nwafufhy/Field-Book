@@ -30,6 +30,7 @@ import com.fieldbook.tracker.utilities.CategoryJsonUtil;
 import com.fieldbook.tracker.utilities.FailureFunction;
 import com.fieldbook.tracker.utilities.SuccessFunction;
 
+import org.brapi.v2.model.pheno.BrAPIObservationVariable;
 import org.brapi.v2.model.pheno.BrAPIScaleValidValuesCategories;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -782,6 +783,12 @@ public class BrAPIServiceV1 extends AbstractBrAPIService implements BrAPIService
             }
         }
         return outputList;
+    }
+
+    public void createVariables(List<BrAPIObservationVariable> variables,
+                                final Function<List<BrAPIObservationVariable>, Void> function,
+                                final Function<Integer, Void> failFunction) {
+        function.apply(new ArrayList<>());
     }
 
     public void createObservations(List<Observation> observations,

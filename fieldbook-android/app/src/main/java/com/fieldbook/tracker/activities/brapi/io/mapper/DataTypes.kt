@@ -34,5 +34,28 @@ class DataTypes {
                 else -> "text"
             }
         }
+
+        fun convertFieldBookFormatToBrAPIDataType(fieldBookFormat: String): String {
+            return when (fieldBookFormat.lowercase(Locale.getDefault())) {
+                "categorical" -> "Nominal"
+                "numeric" -> "Numerical"
+                "text" -> "Text"
+                "date" -> "Date"
+                "boolean" -> "Boolean"
+                "percent" -> "Percent"
+                "counter" -> "Counter"
+                "disease rating" -> "Disease Rating"
+                "multicat" -> "Multicat"
+                "photo" -> "Photo"
+                "audio" -> "Audio"
+                "location" -> "Location"
+                "barcode" -> "Barcode"
+                "gnss" -> "GNSS"
+                "zebra label print" -> "Zebra Label Print"
+                "usb camera" -> "USB Camera"
+                "code" -> "Code"
+                else -> "Text"
+            }
+        }
     }
 }

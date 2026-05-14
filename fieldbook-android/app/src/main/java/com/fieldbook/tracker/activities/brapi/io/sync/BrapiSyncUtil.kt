@@ -5,6 +5,10 @@ import com.fieldbook.tracker.brapi.model.FieldBookImage
 import com.fieldbook.tracker.brapi.model.Observation
 import com.fieldbook.tracker.brapi.service.BrAPIService
 import com.fieldbook.tracker.brapi.service.BrapiPaginationManager
+import com.fieldbook.tracker.database.dao.ObservationVariableDao
+import com.fieldbook.tracker.objects.TraitObject
+import com.fieldbook.tracker.activities.brapi.io.mapper.toBrAPIObservationVariable
+import org.brapi.v2.model.pheno.BrAPIObservationVariable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -95,6 +99,22 @@ suspend fun BrAPIService.awaitCreateObservations(
             if (done) {
                 continuation.resume(Unit)
             }
+            null
+        }
+    )
+}
+
+suspend fun BrAPIService.awaitCreateVariables(
+    variables: List<BrAPIObservationVariable>
+): List<BrAPIObservationVariable> = suspendCoroutine { continuation ->
+    this.createVariables(
+        variables,
+        { result ->
+            continuation.resume(result)
+            null
+        },
+        { errorCode ->
+            continuation.resumeWithException(BrapiException(errorCode))
             null
         }
     )
@@ -245,3 +265,17 @@ suspend fun BrAPIService.awaitGetImageContent(imageDbId: String): FieldBookImage
             }
         )
     }
+
+fun collectLocalTraitsFromObservations(
+    observations: List<Observation>
+): List<TraitObject> {
+    val uniqueTraitNames = observations
+        .filter { it.variableDbId.isNullOrEmpty() }
+        .mapNotNull { it.variableName }
+        .distinct()
+
+    return uniqueTraitNames.mapNotNull { name ->
+        ObservationVariableDao.getTraitByName(name)
+            ?.takeIf { it.isLocalTrait() && it.externalDbId.isNullOrEmpty() }
+    }
+}
