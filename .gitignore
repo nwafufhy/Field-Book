@@ -37,7 +37,8 @@ dist/
 doc/test/
 
 # === Docker ===
-docker/data/
+docker/data/*
+!docker/data/.gitkeep
 
 # === AI Harness (.claude/) ===
 .claude/*
