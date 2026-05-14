@@ -80,6 +80,18 @@ EXPECTED_CALLS = [
         "methods": ["GET", "POST", "PUT"],
         "dataTypes": ["application/json"],
     },
+    {
+        "service": "images/{imageDbId}",
+        "versions": ["2.0", "2.1"],
+        "methods": ["GET", "PUT"],
+        "dataTypes": ["application/json"],
+    },
+    {
+        "service": "images/{imageDbId}/imagecontent",
+        "versions": ["2.0", "2.1"],
+        "methods": ["GET", "PUT"],
+        "dataTypes": ["application/json"],
+    },
 ]
 
 

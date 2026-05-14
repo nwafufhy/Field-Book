@@ -281,6 +281,23 @@ async def get_image_by_id(
     ).model_dump(by_alias=True)
 
 
+@router.put("/brapi/v2/images/{image_db_id}")
+async def put_image_metadata(
+    image_db_id: str,
+    body: dict[str, Any],
+    db: AsyncSession = Depends(get_db),
+):
+    snake = camel_dict_to_snake(body)
+    img = await svc.update_image_metadata(db, image_db_id, snake)
+    if img is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    data = orm_to_camel(img)
+    data.pop("content", None)
+    return BrAPISingleResponse(
+        result=ImageSchema.model_validate(data),
+    ).model_dump(by_alias=True)
+
+
 @router.get("/brapi/v2/images/{image_db_id}/imagecontent")
 async def get_image_content(
     image_db_id: str,

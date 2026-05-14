@@ -147,3 +147,36 @@ async def test_images_get_content_404(client):
     """GET /images/{imageDbId}/imagecontent returns 404 for unknown image."""
     response = await client.get("/brapi/v2/images/nonexistent/imagecontent")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_images_put_metadata(client, db_session):
+    """PUT /images/{imageDbId} updates image metadata fields."""
+    from brapi_light.models.phenotyping import Image
+
+    img = Image(image_db_id="img4", image_file_name="old.jpg", image_name="Old",
+                description="before", mime_type="image/jpeg")
+    db_session.add(img)
+    await db_session.commit()
+
+    response = await client.put("/brapi/v2/images/img4", json={
+        "imageFileName": "new.jpg",
+        "imageName": "New",
+        "description": "after",
+    })
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert result["imageFileName"] == "new.jpg"
+    assert result["imageName"] == "New"
+    assert result["description"] == "after"
+    assert result["mimeType"] == "image/jpeg"  # unchanged
+    assert "content" not in result
+
+
+@pytest.mark.asyncio
+async def test_images_put_metadata_404(client):
+    """PUT /images/{imageDbId} returns 404 for unknown image."""
+    response = await client.put("/brapi/v2/images/nonexistent", json={
+        "imageFileName": "x.jpg",
+    })
+    assert response.status_code == 404

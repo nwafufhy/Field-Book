@@ -191,3 +191,19 @@ async def update_image_content(db: AsyncSession, image_db_id: str, content: byte
         img.content = content
         await db.commit()
     return img
+
+
+async def update_image_metadata(db: AsyncSession, image_db_id: str, fields: dict) -> Image | None:
+    img = await get_image(db, image_db_id)
+    if img is None:
+        return None
+    updatable = {
+        "observation_unit_db_id", "image_file_name", "image_name",
+        "image_file_size", "image_width", "image_height", "mime_type",
+        "description", "image_time_stamp", "copyright", "additional_info",
+    }
+    for key, val in fields.items():
+        if key in updatable and hasattr(img, key):
+            setattr(img, key, val)
+    await db.commit()
+    return img

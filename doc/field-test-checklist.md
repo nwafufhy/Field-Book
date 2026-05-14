@@ -32,7 +32,7 @@ curl http://localhost:8000/brapi/v2/serverinfo
 在模拟器 App 中：
 1. 进入 **Settings**（设置）
 2. 找到 **BrAPI** 部分
-3. **Base URL** 填写：`http://10.0.2.2:8000/brapi/v2`
+3. **Base URL** 填写：`http://10.0.2.2:8000`
 4. **BrAPI Version** 选择：**V2**
 5. 返回主界面
 
