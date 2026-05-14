@@ -20,11 +20,12 @@ Field Book 伞形仓库 — 多人作物表型协作采集系统。包含两个�
 ```
 1. 查 PRD（doc/prd.md）→ 找到对应的特性 ID（F-BE-01 等）和 Gherkin 验收条件
 2. 查 GitHub Issues → 找到对应的 Issue 编号，确认没有人在做
-3. 创建 worktree → git worktree add 隔离开发
-4. 实现 → TDD 循环（RED → GREEN → REFACTOR）
-5. 提交 → 使用特性 ID 标记（如 "fix(F-BE-03): xxx"）
+3. 创建 worktree → 使用 `EnterWorktree` 工具隔离开发（详见下方 Worktree 工作流）
+4. 实现 → TDD 循环（RED → GREEN → REFACTOR），**所有文件改动必须在 worktree 目录下**
+5. 提交 → 使用特性 ID 标记（如 "fix(F-BE-03): xxx"），在 worktree 内提交
 6. PR → 引用 "Fixes #N"，合并后 Issue 自动关闭
 7. 验证通过后立即关闭 Issue → 添加关闭说明，引用关联 PR/commit
+8. 清理 → 使用 `ExitWorktree` 退出 worktree
 ```
 
 ### 需求追溯链
@@ -39,6 +40,38 @@ PRD 特性 ID (F-SYNC-02) ← 引用 → GitHub Issue (#10) ← 关联 → Commi
 `v1.0.0` — 6 个 open Issue (#11-#15, #19)，发布标准见 `doc/prd.md` 第 5 章。
 
 **不要直接凭感觉开始写代码。** 先回答这个问题："我在实现 PRD 的哪个特性？关联哪个 Issue？"
+
+## Worktree 工作流（强制）
+
+**所有开发任务必须在 worktree 中执行，禁止直接在原始仓库修改文件。**
+
+### 铁律
+
+- **必须用 `EnterWorktree` 工具进入 worktree**，不要手动 `git worktree add`
+- **进入 worktree 后，所有 Edit/Write/Bash 操作必须作用于 worktree 目录下的文件**
+- **原始仓库路径** (`D:/proj/Field-Book/`) **只读，禁止修改**
+- 任务完成后用 `ExitWorktree` 退出
+
+### 为什么需要这个流程
+
+`EnterWorktree` 工具会切换会话的工作目录到 worktree 路径（如 `.claude/worktrees/fix-issue24/`）。但 AI 容易忽略这个切换，继续在原始路径下编辑文件。**每次编辑前，确认目标文件路径是否在 worktree 下。**
+
+### 正确示例
+
+```
+1. 用户说"开始做 Issue #24" → 调用 EnterWorktree(name="fix-issue24")
+2. 工作目录切换到 .claude/worktrees/fix-issue24/
+3. 编辑文件: .claude/worktrees/fix-issue24/brapi-light/brapi_light/routers/phenotyping.py
+4. 运行测试: cd .claude/worktrees/fix-issue24/brapi-light && uv run pytest
+5. 提交: cd .claude/worktrees/fix-issue24 && git commit -m "feat(F-BE-07): ..."
+6. 完成后: ExitWorktree(action="keep")
+```
+
+### 子代理注意事项
+
+子代理（Agent 工具）不会自动继承 worktree 上下文。派发子代理时，必须在 prompt 中明确指定 worktree 的完整路径，要求它在 worktree 目录下操作。
+
+---
 
 ## 构建环境（重要）
 
