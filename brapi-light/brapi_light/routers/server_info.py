@@ -77,7 +77,7 @@ EXPECTED_CALLS = [
     {
         "service": "images",
         "versions": ["2.0", "2.1"],
-        "methods": ["POST", "PUT"],
+        "methods": ["GET", "POST", "PUT"],
         "dataTypes": ["application/json"],
     },
 ]

@@ -160,6 +160,12 @@ public interface BrAPIService {
 
     void putImage(FieldBookImage image, final Function<FieldBookImage, Void> function, final Function<Integer, Void> failFunction);
 
+    void getImages(String observationUnitDbId, final Function<List<FieldBookImage>, Void> function, final Function<Integer, Void> failFunction);
+
+    void getImage(String imageDbId, final Function<FieldBookImage, Void> function, final Function<Integer, Void> failFunction);
+
+    void getImageContent(String imageDbId, final Function<FieldBookImage, Void> function, final Function<Integer, Void> failFunction);
+
     void getPrograms(final BrapiPaginationManager paginationManager, final Function<List<BrapiProgram>, Void> function, final Function<Integer, Void> failFunction);
 
     void getTrials(String programDbId, BrapiPaginationManager paginationManager, final Function<List<BrapiTrial>, Void> function, final Function<Integer, Void> failFunction);

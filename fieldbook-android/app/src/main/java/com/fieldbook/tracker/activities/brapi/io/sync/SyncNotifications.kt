@@ -37,6 +37,7 @@ object SyncNotifications {
         uploaded: Int,
         downloaded: Int,
         conflicts: Int,
+        downloadedImages: Int = 0,
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -48,6 +49,10 @@ object SyncNotifications {
             append(context.getString(R.string.brapi_sync_uploaded, uploaded))
             append(", ")
             append(context.getString(R.string.brapi_sync_downloaded, downloaded))
+            if (downloadedImages > 0) {
+                append(", ")
+                append(context.getString(R.string.brapi_sync_images_downloaded, downloadedImages))
+            }
             if (conflicts > 0) {
                 append(" — ")
                 append(context.getString(R.string.brapi_sync_conflicts, conflicts))

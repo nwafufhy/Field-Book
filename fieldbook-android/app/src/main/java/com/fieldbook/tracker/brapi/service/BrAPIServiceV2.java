@@ -49,6 +49,7 @@ import org.brapi.client.v2.model.exceptions.ApiException;
 import org.brapi.client.v2.model.queryParams.core.ProgramQueryParams;
 import org.brapi.client.v2.model.queryParams.core.StudyQueryParams;
 import org.brapi.client.v2.model.queryParams.core.TrialQueryParams;
+import org.brapi.client.v2.model.queryParams.phenotype.ImageQueryParams;
 import org.brapi.client.v2.model.queryParams.phenotype.ObservationQueryParams;
 import org.brapi.client.v2.model.queryParams.phenotype.ObservationUnitQueryParams;
 import org.brapi.client.v2.model.queryParams.phenotype.VariableQueryParams;
@@ -365,6 +366,151 @@ public class BrAPIServiceV2 extends AbstractBrAPIService implements BrAPIService
             Log.e("BrAPIServiceV2", "API Exception", error);
         }
 
+    }
+
+    public void getImages(String observationUnitDbId,
+                          final Function<List<FieldBookImage>, Void> function,
+                          final Function<Integer, Void> failFunction) {
+        try {
+            BrapiV2ApiCallBack<BrAPIImageListResponse> callback = new BrapiV2ApiCallBack<BrAPIImageListResponse>() {
+                @Override
+                public void onSuccess(BrAPIImageListResponse response, int i, Map<String, List<String>> map) {
+                    List<FieldBookImage> images = new ArrayList<>();
+                    if (response != null && response.getResult() != null && response.getResult().getData() != null) {
+                        for (BrAPIImage img : response.getResult().getData()) {
+                            FieldBookImage fbImage = new FieldBookImage();
+                            fbImage.setDbId(img.getImageDbId());
+                            fbImage.setUnitDbId(img.getObservationUnitDbId());
+                            fbImage.setFileName(img.getImageFileName());
+                            fbImage.setImageName(img.getImageName());
+                            fbImage.setMimeType(img.getMimeType());
+                            if (img.getImageFileSize() != null) {
+                                fbImage.setFileSize(img.getImageFileSize());
+                            }
+                            if (img.getImageWidth() != null) {
+                                fbImage.setWidth(img.getImageWidth());
+                            }
+                            if (img.getImageHeight() != null) {
+                                fbImage.setHeight(img.getImageHeight());
+                            }
+                            fbImage.setDescription(img.getDescription());
+                            fbImage.setDescriptiveOntologyTerms(img.getDescriptiveOntologyTerms());
+                            try {
+                                fbImage.setTimestamp(TimeAdapter.convertFrom(img.getImageTimeStamp()));
+                            } catch (Exception ignored) {}
+                            images.add(fbImage);
+                        }
+                    }
+                    function.apply(images);
+                }
+
+                @Override
+                public void onFailure(ApiException error, int statusCode, Map<String, List<String>> responseHeaders) {
+                    failFunction.apply(error.getCode());
+                    Log.e(TAG, "getImages failed", error);
+                }
+            };
+
+            ImageQueryParams params = new ImageQueryParams();
+            if (observationUnitDbId != null) {
+                params.observationUnitDbId(observationUnitDbId);
+            }
+            imagesApi.imagesGetAsync(params, callback);
+
+        } catch (ApiException error) {
+            failFunction.apply(error.getCode());
+            Log.e(TAG, "getImages API Exception", error);
+        }
+    }
+
+    public void getImage(String imageDbId,
+                         final Function<FieldBookImage, Void> function,
+                         final Function<Integer, Void> failFunction) {
+        try {
+            BrapiV2ApiCallBack<BrAPIImageSingleResponse> callback = new BrapiV2ApiCallBack<BrAPIImageSingleResponse>() {
+                @Override
+                public void onSuccess(BrAPIImageSingleResponse response, int i, Map<String, List<String>> map) {
+                    if (response != null && response.getResult() != null) {
+                        BrAPIImage img = response.getResult();
+                        FieldBookImage fbImage = new FieldBookImage();
+                        fbImage.setDbId(img.getImageDbId());
+                        fbImage.setUnitDbId(img.getObservationUnitDbId());
+                        fbImage.setFileName(img.getImageFileName());
+                        fbImage.setImageName(img.getImageName());
+                        fbImage.setMimeType(img.getMimeType());
+                        if (img.getImageFileSize() != null) {
+                            fbImage.setFileSize(img.getImageFileSize());
+                        }
+                        if (img.getImageWidth() != null) {
+                            fbImage.setWidth(img.getImageWidth());
+                        }
+                        if (img.getImageHeight() != null) {
+                            fbImage.setHeight(img.getImageHeight());
+                        }
+                        fbImage.setDescription(img.getDescription());
+                        fbImage.setDescriptiveOntologyTerms(img.getDescriptiveOntologyTerms());
+                        try {
+                            fbImage.setTimestamp(TimeAdapter.convertFrom(img.getImageTimeStamp()));
+                        } catch (Exception ignored) {}
+                        function.apply(fbImage);
+                    }
+                }
+
+                @Override
+                public void onFailure(ApiException error, int statusCode, Map<String, List<String>> responseHeaders) {
+                    failFunction.apply(error.getCode());
+                    Log.e(TAG, "getImage failed", error);
+                }
+            };
+
+            imagesApi.imagesImageDbIdGetAsync(imageDbId, callback);
+
+        } catch (ApiException error) {
+            failFunction.apply(error.getCode());
+            Log.e(TAG, "getImage API Exception", error);
+        }
+    }
+
+    public void getImageContent(String imageDbId,
+                                final Function<FieldBookImage, Void> function,
+                                final Function<Integer, Void> failFunction) {
+        try {
+            String baseUrl = BrAPIService.getBrapiUrl(context);
+            String token = PreferenceManager.getDefaultSharedPreferences(context)
+                    .getString(PreferenceKeys.BRAPI_TOKEN, "");
+            java.net.URL url = new java.net.URL(baseUrl + "/brapi/v2/images/" + imageDbId + "/imagecontent");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000);
+
+            int status = conn.getResponseCode();
+            if (status != 200) {
+                conn.disconnect();
+                failFunction.apply(status);
+                return;
+            }
+
+            java.io.InputStream is = conn.getInputStream();
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            byte[] data = new byte[8192];
+            int n;
+            while ((n = is.read(data)) != -1) {
+                buffer.write(data, 0, n);
+            }
+            is.close();
+            conn.disconnect();
+
+            FieldBookImage image = new FieldBookImage();
+            image.setDbId(imageDbId);
+            image.setBytes(buffer.toByteArray());
+            function.apply(image);
+
+        } catch (Exception e) {
+            Log.e(TAG, "getImageContent failed", e);
+            failFunction.apply(500);
+        }
     }
 
     public void getPrograms(final BrapiPaginationManager paginationManager,

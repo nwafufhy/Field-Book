@@ -25,7 +25,7 @@ val fieldBookImplementedCalls = listOf(
     BrapiServerCall("observations", listOf("GET", "POST", "PUT")),
     BrapiServerCall("observationlevels", listOf("GET")),
     BrapiServerCall("observationunits", listOf("GET")),
-    BrapiServerCall("images", listOf("POST")),
-    BrapiServerCall("images/{imageDbId}", listOf("PUT")),
-    BrapiServerCall("images/{imageDbId}/imagecontent", listOf("PUT")),
+    BrapiServerCall("images", listOf("GET", "POST")),
+    BrapiServerCall("images/{imageDbId}", listOf("GET", "PUT")),
+    BrapiServerCall("images/{imageDbId}/imagecontent", listOf("GET", "PUT")),
 )

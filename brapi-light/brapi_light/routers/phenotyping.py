@@ -5,6 +5,7 @@ from math import ceil
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from brapi_light.database.base import get_db
@@ -249,3 +250,46 @@ async def put_image_content(
     return BrAPISingleResponse(
         result=ImageSchema.model_validate(data),
     ).model_dump(by_alias=True)
+
+
+@router.get("/brapi/v2/images")
+async def get_images(
+    observationUnitDbId: str | None = Query(None, alias="observationUnitDbId"),
+    page: int = Query(0, ge=0),
+    pageSize: int = Query(1000, ge=1, le=10000, alias="pageSize"),
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await svc.list_images(
+        db, observation_unit_db_id=observationUnitDbId,
+        page=page, page_size=pageSize,
+    )
+    return _paginated_response(ImageSchema, items, total, page, pageSize)
+
+
+@router.get("/brapi/v2/images/{image_db_id}")
+async def get_image_by_id(
+    image_db_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    img = await svc.get_image(db, image_db_id)
+    if img is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    data = orm_to_camel(img)
+    data.pop("content", None)
+    return BrAPISingleResponse(
+        result=ImageSchema.model_validate(data),
+    ).model_dump(by_alias=True)
+
+
+@router.get("/brapi/v2/images/{image_db_id}/imagecontent")
+async def get_image_content(
+    image_db_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    img = await svc.get_image(db, image_db_id)
+    if img is None or img.content is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return Response(
+        content=img.content,
+        media_type=img.mime_type or "application/octet-stream",
+    )

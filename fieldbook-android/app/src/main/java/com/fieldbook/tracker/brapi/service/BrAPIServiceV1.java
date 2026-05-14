@@ -256,6 +256,24 @@ public class BrAPIServiceV1 extends AbstractBrAPIService implements BrAPIService
 
     }
 
+    public void getImages(String observationUnitDbId,
+                          final Function<List<FieldBookImage>, Void> function,
+                          final Function<Integer, Void> failFunction) {
+        failFunction.apply(501);
+    }
+
+    public void getImage(String imageDbId,
+                         final Function<FieldBookImage, Void> function,
+                         final Function<Integer, Void> failFunction) {
+        failFunction.apply(501);
+    }
+
+    public void getImageContent(String imageDbId,
+                                final Function<FieldBookImage, Void> function,
+                                final Function<Integer, Void> failFunction) {
+        failFunction.apply(501);
+    }
+
     private void updatePageInfo(BrapiPaginationManager paginationManager, Metadata metadata){
         if(paginationManager.getContext() != null) { //null check for JUnits
             ((Activity) paginationManager.getContext())

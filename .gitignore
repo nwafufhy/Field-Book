@@ -8,6 +8,7 @@ gen/
 out/
 .gradle/
 build/
+r8-repo/
 *.hprof
 local.properties
 *.log

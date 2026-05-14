@@ -24,6 +24,7 @@ Field Book 伞形仓库 — 多人作物表型协作采集系统。包含两个�
 4. 实现 → TDD 循环（RED → GREEN → REFACTOR）
 5. 提交 → 使用特性 ID 标记（如 "fix(F-BE-03): xxx"）
 6. PR → 引用 "Fixes #N"，合并后 Issue 自动关闭
+7. 验证通过后立即关闭 Issue → 添加关闭说明，引用关联 PR/commit
 ```
 
 ### 需求追溯链
@@ -35,7 +36,7 @@ PRD 特性 ID (F-SYNC-02) ← 引用 → GitHub Issue (#10) ← 关联 → Commi
 
 ### 当前 Milestone
 
-`v1.0.0` — 7 个 open Issue (#9-#15)，发布标准见 `doc/prd.md` 第 5 章。
+`v1.0.0` — 6 个 open Issue (#11-#15, #19)，发布标准见 `doc/prd.md` 第 5 章。
 
 **不要直接凭感觉开始写代码。** 先回答这个问题："我在实现 PRD 的哪个特性？关联哪个 Issue？"
 

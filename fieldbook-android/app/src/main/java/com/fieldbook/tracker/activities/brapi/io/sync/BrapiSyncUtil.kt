@@ -198,3 +198,50 @@ suspend fun BrAPIService.awaitGetSingleObservationPage(
 
     }
 }
+
+suspend fun BrAPIService.awaitGetImages(observationUnitDbId: String): List<FieldBookImage> =
+    suspendCoroutine { continuation ->
+        this.getImages(
+            observationUnitDbId,
+            { result ->
+                continuation.resume(result)
+                null
+            },
+            { errorCode ->
+                continuation.resumeWithException(BrapiException(errorCode))
+                null
+            }
+        )
+    }
+
+suspend fun BrAPIService.awaitGetImage(imageDbId: String): FieldBookImage =
+    suspendCoroutine { continuation ->
+        this.getImage(
+            imageDbId,
+            { result ->
+                result?.let { continuation.resume(it) }
+                    ?: continuation.resumeWithException(IllegalStateException("getImage returned null"))
+                null
+            },
+            { errorCode ->
+                continuation.resumeWithException(BrapiException(errorCode))
+                null
+            }
+        )
+    }
+
+suspend fun BrAPIService.awaitGetImageContent(imageDbId: String): FieldBookImage =
+    suspendCoroutine { continuation ->
+        this.getImageContent(
+            imageDbId,
+            { result ->
+                result?.let { continuation.resume(it) }
+                    ?: continuation.resumeWithException(IllegalStateException("getImageContent returned null"))
+                null
+            },
+            { errorCode ->
+                continuation.resumeWithException(BrapiException(errorCode))
+                null
+            }
+        )
+    }

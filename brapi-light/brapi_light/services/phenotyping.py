@@ -162,6 +162,16 @@ async def list_changed_observations(
     return list(items), total
 
 
+async def list_images(
+    db: AsyncSession,
+    observation_unit_db_id: str | None = None,
+    page: int = 0,
+    page_size: int = 1000,
+) -> tuple[list[Image], int]:
+    return await _list_all(db, Image, page=page, page_size=page_size,
+                           observation_unit_db_id=observation_unit_db_id)
+
+
 async def create_images(db: AsyncSession, images: list[Image]) -> list[Image]:
     for img in images:
         db.add(img)

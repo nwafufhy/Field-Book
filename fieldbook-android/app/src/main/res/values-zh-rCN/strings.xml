@@ -1617,6 +1617,7 @@
     <string name="brapi_sync_uploaded">已上传 %1$d 条</string>
     <string name="brapi_sync_downloaded">已下载 %1$d 条</string>
     <string name="brapi_sync_conflicts">%1$d 个冲突</string>
+    <string name="brapi_sync_images_downloaded">已下载 %1$d 张图片</string>
     <string name="download_from">从 %1$s 下载</string>
     <string name="last_checked">上次检查：%1$s</string>
     <string name="brapi_conflicts_found">发现 %1$d 条冲突观测值。请选择合并策略：</string>

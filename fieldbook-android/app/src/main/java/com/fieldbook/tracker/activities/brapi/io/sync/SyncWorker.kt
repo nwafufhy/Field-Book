@@ -51,6 +51,7 @@ class SyncWorker(
 
             var totalUploaded = 0
             var totalDownloaded = 0
+            var totalDownloadedImages = 0
 
             for (field in fields) {
                 val fieldId = field.studyId
@@ -82,6 +83,7 @@ class SyncWorker(
                 }
 
                 // ── Download: get latest observations for this study ──
+                val unitIdsForImages = mutableListOf<String>()
                 try {
                     val paginationManager = com.fieldbook.tracker.brapi.service.BrapiPaginationManager(0, 100)
                     val page = brAPIService.awaitGetSingleObservationPage(
@@ -105,9 +107,35 @@ class SyncWorker(
                                 )
                             } catch (_: Exception) {}
                         }
+                        obs.unitDbId?.let { unitIdsForImages.add(it) }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Download failed for field $fieldId", e)
+                }
+
+                // ── Download images for this field ──
+                try {
+                    val uniqueUnitIds = unitIdsForImages.distinct()
+                    for (unitId in uniqueUnitIds) {
+                        try {
+                            val images = brAPIService.awaitGetImages(unitId)
+                            for (img in images) {
+                                val imgDbId = img.dbId ?: continue
+                                val imageContent = brAPIService.awaitGetImageContent(imgDbId)
+                                val imageData = imageContent.imageData
+                                if (imageData != null) {
+                                    val dir = java.io.File(applicationContext.filesDir, "plot_data")
+                                    dir.mkdirs()
+                                    val fileName = img.fileName ?: imgDbId
+                                    val file = java.io.File(dir, fileName)
+                                    file.writeBytes(imageData)
+                                    totalDownloadedImages++
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Image download failed for field $fieldId", e)
                 }
             }
 
@@ -115,13 +143,13 @@ class SyncWorker(
             val now = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
             prefs.edit().putString(PreferenceKeys.BRAPI_LAST_SYNC_TIME, now).apply()
 
-            if (totalUploaded > 0 || totalDownloaded > 0) {
+            if (totalUploaded > 0 || totalDownloaded > 0 || totalDownloadedImages > 0) {
                 SyncNotifications.showSyncComplete(
-                    applicationContext, totalUploaded, totalDownloaded, 0
+                    applicationContext, totalUploaded, totalDownloaded, 0, totalDownloadedImages
                 )
             }
 
-            Log.d(TAG, "Sync done: $totalUploaded up, $totalDownloaded down")
+            Log.d(TAG, "Sync done: $totalUploaded up, $totalDownloaded down, $totalDownloadedImages img")
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Sync error", e)
