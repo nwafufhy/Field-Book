@@ -9,7 +9,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from brapi_light.database.base import get_db
-from brapi_light.models.phenotyping import Image, Observation, ObservationVariable
+from brapi_light.models.phenotyping import Image, Observation
 from brapi_light.schemas.brapi_response import (
     BrAPIListResponse,
     BrAPISingleResponse,

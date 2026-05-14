@@ -13,7 +13,7 @@ from brapi_light.database.engine import async_session_factory, engine
 from brapi_light.models import core as _core_models  # noqa: F401  register ORM models
 from brapi_light.models.core import Program, Study, Trial
 from brapi_light.models.phenotyping import ObservationVariable
-from brapi_light.routers import auth, core, phenotyping, server_info
+from brapi_light.routers import admin, auth, core, phenotyping, server_info
 
 
 async def _seed_demo_data():
@@ -103,8 +103,6 @@ async def log_errors(request: Request, call_next):
         print(msg)
         return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
-
-from brapi_light.routers import admin
 
 app.include_router(server_info.router)
 app.include_router(core.router)
