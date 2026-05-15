@@ -59,6 +59,27 @@ async def _seed_demo_data():
             ),
         ]
         db.add_all(variables)
+        await db.flush()
+
+        # Seed observation units with observationLevel (BrAPI protocol requirement)
+        from brapi_light.models.phenotyping import ObservationUnit
+        units = []
+        for i in range(1, 4):
+            units.append(ObservationUnit(
+                observation_unit_db_id=f"plot{i}",
+                observation_unit_name=f"Plot {i}",
+                study_db_id="s1",
+                germplasm_db_id=f"g{i}",
+                germplasm_name=f"Wheat Line {i}",
+                observation_unit_position=json.dumps({
+                    "entryType": "TEST",
+                    "geoCoordinates": {},
+                    "observationLevel": {"levelName": "plot", "levelOrder": 1},
+                    "positionCoordinateX": str(i),
+                    "positionCoordinateXType": "GRID_COL",
+                }),
+            ))
+        db.add_all(units)
         await db.commit()
 
 
